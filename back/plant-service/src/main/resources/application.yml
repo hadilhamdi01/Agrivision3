@@ -1,0 +1,18 @@
+server:
+  port: 8081  # ou le port que tu utilises réellement pour plant-service
+
+spring:
+  application:
+    name: plant-service
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8085/realms/agrivision   # EXACTEMENT l'URL de ton realm Keycloak
+          # Optionnel mais recommandé : pour plus de sécurité
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

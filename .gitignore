@@ -1,0 +1,22 @@
+# ===== General =====
+*.log
+allfiles.txt
+.DS_Store
+Thumbs.db
+
+# ===== Spring Boot =====
+/target/
+*.class
+.idea/
+.vscode/
+
+# ===== Flutter =====
+/build/
+/.dart_tool/
+/android/.gradle/
+/android/build/
+/ios/Pods/
+
+# ===== Node / Gradle =====
+node_modules/
+.gradle/

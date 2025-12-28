@@ -1,0 +1,67 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: gateway-service
+
+  cloud:
+    gateway:
+      filter:
+        weight:
+          enabled: false
+
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      routes:
+        - id: plant-service
+          uri: lb://plant-service
+          predicates:
+            - Path=/plants/**,/api/plants/**
+          filters:
+            - TokenRelay
+
+        - id: image-service
+          uri: lb://image-service
+          predicates:
+            - Path=/images/**,/api/images/**
+          filters:
+            - TokenRelay
+
+  security:
+    oauth2:
+      # 🔥 OBLIGATOIRE POUR LE GATEWAY
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8085/realms/agrivision
+          jwk-set-uri: http://localhost:8085/realms/agrivision/protocol/openid-connect/certs
+
+      # 🔥 OBLIGATOIRE POUR TokenRelay
+      client:
+        registration:
+          keycloak:
+            client-id: agrivision-client
+            client-secret: uBEelQmv8IBK7UZ29mPj0Al2bDqVynYl
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8085/realms/agrivision
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: INFO
