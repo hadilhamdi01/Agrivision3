@@ -30,6 +30,10 @@ spring:
             - Path=/images/**,/api/images/**
           filters:
             - TokenRelay
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth/**,/api/auth/**
 
   security:
     oauth2:
