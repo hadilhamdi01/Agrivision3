@@ -1,41 +1,42 @@
 import 'dart:ui';
-import 'package:agrivision/screens/registerPage.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
+import 'loginPage.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
+  final usernameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  String message = '';
   bool loading = false;
-  bool rememberMe = false;
 
-  void login() async {
+  void register() async {
     setState(() => loading = true);
 
-    final token = await AuthService.login(
+    final success = await AuthService.register(
+      usernameController.text,
       emailController.text,
       passwordController.text,
     );
 
-    if (token != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } else {
-      setState(() => loading = false);
+    setState(() => loading = false);
+
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Login échoué')),
+        const SnackBar(content: Text('✅ Compte créé, connectez-vous')),
       );
+
+      Navigator.pop(context); // retour login
+    } else {
+      setState(() => message = '❌ Échec de création du compte');
     }
   }
 
@@ -44,12 +45,12 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          /// 🔹 IMAGE BACKGROUND (REMONTÉE POUR LE SOLEIL)
+          /// 🔹 IMAGE DE FOND
           Positioned.fill(
             child: Image.asset(
               'assets/images/field_background.png',
               fit: BoxFit.cover,
-              alignment: Alignment.topCenter, // ⭐ ICI : image remontée
+              alignment: Alignment.topCenter,
             ),
           ),
 
@@ -69,8 +70,7 @@ class _LoginPageState extends State<LoginPage> {
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -97,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
 
                             const SizedBox(height: 35),
 
-                            /// 🔹 LOGIN CARD
+                            /// 🔹 REGISTER CARD
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(28),
@@ -115,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: Column(
                                 children: [
                                   Text(
-                                    'Login to your account',
+                                    'Create your account',
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       fontSize: 15,
@@ -124,18 +124,33 @@ class _LoginPageState extends State<LoginPage> {
 
                                   const SizedBox(height: 28),
 
+                                  /// USERNAME
+                                  TextField(
+                                    controller: usernameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Username',
+                                      prefixIcon: const Icon(Icons.person_outline),
+                                      filled: true,
+                                      fillColor: Colors.grey[100],
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18),
+
                                   /// EMAIL
                                   TextField(
                                     controller: emailController,
                                     decoration: InputDecoration(
-                                      labelText: 'Name',
-                                      prefixIcon: const Icon(
-                                          Icons.person_outline),
+                                      labelText: 'Email',
+                                      prefixIcon: const Icon(Icons.email_outlined),
                                       filled: true,
                                       fillColor: Colors.grey[100],
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(18),
                                         borderSide: BorderSide.none,
                                       ),
                                     ),
@@ -149,61 +164,28 @@ class _LoginPageState extends State<LoginPage> {
                                     obscureText: true,
                                     decoration: InputDecoration(
                                       labelText: 'Password',
-                                      prefixIcon:
-                                          const Icon(Icons.lock_outline),
+                                      prefixIcon: const Icon(Icons.lock_outline),
                                       filled: true,
                                       fillColor: Colors.grey[100],
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(18),
                                         borderSide: BorderSide.none,
                                       ),
                                     ),
                                   ),
 
-                                  const SizedBox(height: 10),
-
-                                  /// REMEMBER & FORGOT
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        value: rememberMe,
-                                        activeColor:
-                                            const Color(0xFF4CAF50),
-                                        onChanged: (v) {
-                                          setState(() =>
-                                              rememberMe = v ?? false);
-                                        },
-                                      ),
-                                      const Text('Remember me'),
-                                      const Spacer(),
-                                      TextButton(
-                                        onPressed: () {},
-                                        child: const Text(
-                                          'Forgot password?',
-                                          style: TextStyle(
-                                            color: Color(0xFF4CAF50),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
                                   const SizedBox(height: 20),
 
-                                  /// LOGIN BUTTON
+                                  /// REGISTER BUTTON
                                   SizedBox(
                                     width: double.infinity,
                                     height: 52,
                                     child: ElevatedButton(
-                                      onPressed:
-                                          loading ? null : login,
+                                      onPressed: loading ? null : register,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            const Color(0xFF4CAF50),
+                                        backgroundColor: const Color(0xFF4CAF50),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(18),
+                                          borderRadius: BorderRadius.circular(18),
                                         ),
                                       ),
                                       child: loading
@@ -211,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                                               color: Colors.white,
                                             )
                                           : const Text(
-                                              'LOGIN',
+                                              'REGISTER',
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -223,28 +205,20 @@ class _LoginPageState extends State<LoginPage> {
 
                                   const SizedBox(height: 22),
 
-                                  /// SIGN UP
+                                  /// LOGIN LINK
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
-                                        "Don't have an account? ",
-                                        style:
-                                            TextStyle(color: Colors.grey),
+                                        'Already have an account? ',
+                                        style: TextStyle(color: Colors.grey),
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const RegisterPage(),
-                                            ),
-                                          );
+                                          Navigator.pop(context);
                                         },
                                         child: const Text(
-                                          'Sign up',
+                                          'Login',
                                           style: TextStyle(
                                             color: Color(0xFF4CAF50),
                                             fontWeight: FontWeight.bold,
@@ -252,6 +226,12 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                       ),
                                     ],
+                                  ),
+
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    message,
+                                    style: const TextStyle(color: Colors.red),
                                   ),
                                 ],
                               ),
@@ -272,6 +252,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
