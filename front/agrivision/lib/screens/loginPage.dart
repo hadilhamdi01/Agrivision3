@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:agrivision/screens/registerPage.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
+import 'package:agrivision/screens/home_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     if (token != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => HomeScreen()),
       );
     } else {
       setState(() => loading = false);
@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Image.asset(
               'assets/images/field_background.png',
               fit: BoxFit.cover,
-              alignment: Alignment.topCenter, // ⭐ ICI : image remontée
+              alignment: Alignment.topCenter, 
             ),
           ),
 

@@ -9,8 +9,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8085/realms/agrivision   # EXACTEMENT l'URL de ton realm Keycloak
-          # Optionnel mais recommandé : pour plus de sécurité
+          issuer-uri: http://localhost:8085/realms/agrivision  
 
 eureka:
   client:

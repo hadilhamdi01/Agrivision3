@@ -3,6 +3,7 @@ package agrivision.example.gateway_service.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
@@ -10,7 +11,7 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 @Configuration
 public class SecurityConfig {
 
-    // 🔓 CHAÎNE PUBLIQUE (REGISTER / LOGIN)
+    // 🔓 CHAÎNE PUBLIQUE (login / register / actuator)
     @Bean
     @Order(1)
     public SecurityWebFilterChain publicSecurityChain(ServerHttpSecurity http) {
@@ -36,7 +37,9 @@ public class SecurityConfig {
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(ex -> ex.anyExchange().authenticated())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt());
+            .oauth2ResourceServer(oauth2 ->
+                oauth2.jwt(Customizer.withDefaults())
+            );
 
         return http.build();
     }

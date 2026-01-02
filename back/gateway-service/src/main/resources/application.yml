@@ -35,6 +35,15 @@ spring:
           predicates:
             - Path=/auth/**,/api/auth/**
 
+
+        - id: weather-service
+          uri: lb://weather-service
+          predicates:
+            - Path=/weather/**
+          filters:
+            - TokenRelay
+
+
   security:
     oauth2:
       # 🔥 OBLIGATOIRE POUR LE GATEWAY
