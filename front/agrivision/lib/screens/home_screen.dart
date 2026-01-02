@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
 import 'loginPage.dart';
+import 'diseases.dart'; // <-- import pour la page Diseases
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,13 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              const Text(
-                "Today",
-                style: TextStyle(color: Colors.white70),
-              ),
+              const Text("Today", style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 6),
               Text(
-                weather!['description'] ?? "Few clouds",
+                "${weather!['status'] }",
                 style: const TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 12),
@@ -134,15 +132,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
 
+      // 🔥 DRAWER (SIDEBAR)
+      drawer: appDrawer(context),
+
       // APP BAR
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 118, 173, 129),
         elevation: 0,
-        title: const Text(
-          "Agrivision",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: const Text("Agrivision",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+
+        // ☰ OPEN DRAWER
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
-        leading: const Icon(Icons.menu),
+
         actions: const [
           Icon(Icons.search),
           SizedBox(width: 16),
@@ -167,9 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             weatherCard(),
-
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Text(
@@ -181,7 +186,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GridView.count(
@@ -214,7 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
           ],
         ),
@@ -239,6 +242,82 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ================= DRAWER =================
+Widget appDrawer(BuildContext context) {
+  return Drawer(
+    child: Column(
+      children: [
+        DrawerHeader(
+          decoration: const BoxDecoration(color: Color(0xFF76AD81)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 34, color: Colors.green),
+              ),
+              SizedBox(height: 12),
+              Text("AgriVision",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold)),
+              Text("Smart Farming Assistant",
+                  style: TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.home),
+          title: const Text("Home"),
+        ),
+        ListTile(
+          leading: const Icon(Icons.cloud),
+          title: const Text("Weather"),
+        ),
+        ListTile(
+          leading: const Icon(Icons.chat),
+          title: const Text("Chat"),
+        ),
+        ListTile(
+          leading: const Icon(Icons.camera_alt),
+          title: const Text("Diseases"),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiseasesPage()),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.person),
+          title: const Text("Profile"),
+        ),
+
+        const Spacer(),
+
+        // 🔴 LOGOUT
+        ListTile(
+          leading: const Icon(Icons.logout, color: Colors.red),
+          title:
+              const Text("Logout", style: TextStyle(color: Colors.red)),
+          onTap: () async {
+            await AuthService.logout();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    ),
+  );
+}
+
 // ================= FEATURE CARD =================
 class FeatureCard extends StatelessWidget {
   final String title;
@@ -254,35 +333,38 @@ class FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 48, color: Colors.green),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
+    return InkWell(
+      onTap: () {
+        if (title == "Disease Scanner") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DiseasesPage()),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: Colors.green),
+            const SizedBox(height: 12),
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 6),
+            Text(subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
       ),
     );
   }

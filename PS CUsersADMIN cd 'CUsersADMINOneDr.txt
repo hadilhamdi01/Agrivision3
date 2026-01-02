@@ -1,7 +1,6 @@
-PS C:\Users\ADMIN> cd 'C:\Users\ADMIN\OneDrive - South Mediterranean University\Desktop\PFA\back'
 
 
 mvn spring-boot:run
-kc.bat start-dev --http-port=8081 pour lancer Keycloak
-
+kc.bat start-dev --http-port=8085 pour lancer Keycloak
+uvicorn app.main:app --reload --port 8005
 
