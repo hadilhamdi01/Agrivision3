@@ -17,48 +17,25 @@ class _HomeScreenState extends State<HomeScreen> {
   bool loading = true;
   String? token;
 
-  // Liste des plantes
-  static const List<Map<String, String>> plants = [
-    {
-      "name": "Tomato",
-      "description": "Needs lots of sunlight",
-      "image": "https://picsum.photos/seed/tomato/200/200"
-    },
-    {
-      "name": "Lettuce",
-      "description": "Keep soil moist",
-      "image": "https://picsum.photos/seed/lettuce/200/200"
-    },
-    {
-      "name": "Carrot",
-      "description": "Grow underground",
-      "image": "https://picsum.photos/seed/carrot/200/200"
-    },
-    {
-      "name": "Cucumber",
-      "description": "Requires trellis",
-      "image": "https://picsum.photos/seed/cucumber/200/200"
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
     initHome();
   }
 
-  /// Charger le token et la météo
-  void initHome() async {
+  Future<void> initHome() async {
     final prefs = await SharedPreferences.getInstance();
     final storedToken = prefs.getString('token');
 
     if (storedToken == null) {
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => const LoginPage()));
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
       return;
     }
 
-    setState(() => token = storedToken);
+    token = storedToken;
     await loadWeather();
   }
 
@@ -77,16 +54,14 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
     }
   }
 
   String iconUrl(String icon) =>
       "https://openweathermap.org/img/wn/$icon@2x.png";
 
-  Widget weatherBloc() {
+  // ================= WEATHER CARD =================
+  Widget weatherCard() {
     if (loading) {
       return const Padding(
         padding: EdgeInsets.all(20),
@@ -95,219 +70,217 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (weather == null) {
-      return const Padding(
-        padding: EdgeInsets.all(20),
-        child: Text("Impossible de récupérer la météo",
-            style: TextStyle(color: Colors.red)),
-      );
+      return const Text("Weather unavailable");
     }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
-        ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7EC8E3), Color(0xFFA8E6CF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
+              Row(
                 children: [
-                  const Icon(Icons.location_on, size: 28, color: Colors.orange),
-                  const SizedBox(height: 6),
-                  const Text("Location"),
-                  const SizedBox(height: 4),
-                  Text(weather!['location'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const Icon(Icons.location_on, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Text(
+                    weather!['location'],
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 16),
+                  ),
                 ],
               ),
-              Column(
-                children: [
-                  const Icon(Icons.water_drop, size: 28, color: Color.fromARGB(255, 0, 166, 255)),
-                  const SizedBox(height: 6),
-                  const Text("Humidity"),
-                  const SizedBox(height: 4),
-                  Text("${weather!['humidity']}%", style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
+              const SizedBox(height: 6),
+              const Text(
+                "Today",
+                style: TextStyle(color: Colors.white70),
               ),
-              Column(
-                children: [
-                  const Icon(Icons.air, size: 28, color: Colors.grey),
-                  const SizedBox(height: 6),
-                  const Text("Wind"),
-                  const SizedBox(height: 4),
-                  Text("${weather!['windSpeed']} km/h", style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
+              const SizedBox(height: 6),
+              Text(
+                weather!['description'] ?? "Few clouds",
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "${weather!['temperature']}°C",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Image.network(iconUrl(weather!['icon']), width: 80, height: 80),
-          const SizedBox(height: 6),
-          Text(weather!['plantAdvice'], textAlign: TextAlign.center),
+          Image.network(iconUrl(weather!['icon']), width: 90),
         ],
       ),
     );
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F8E8),
-      body: SafeArea(
+      backgroundColor: const Color(0xFFF4F7F6),
+
+      // APP BAR
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 118, 173, 129),
+        elevation: 0,
+        title: const Text(
+          "Agrivision",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        leading: const Icon(Icons.menu),
+        actions: const [
+          Icon(Icons.search),
+          SizedBox(width: 16),
+          Icon(Icons.notifications_none),
+          SizedBox(width: 16),
+        ],
+      ),
+
+      // BODY
+      body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top menu
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                "Weather Conditions",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+
+            weatherCard(),
+
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                "Agrivision Smart Support",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.menu, size: 30, color: Colors.green),
-                  IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.redAccent),
-                    onPressed: () async {
-                      await AuthService.logout();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                      );
-                    },
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                children: const [
+                  FeatureCard(
+                    title: "Chat",
+                    subtitle: "Get instant farming advice",
+                    icon: Icons.chat_bubble_outline,
+                  ),
+                  FeatureCard(
+                    title: "Disease Scanner",
+                    subtitle: "Identify plant problems",
+                    icon: Icons.search,
+                  ),
+                  FeatureCard(
+                    title: "Community",
+                    subtitle: "Ask & share with farmers",
+                    icon: Icons.groups,
+                  ),
+                  FeatureCard(
+                    title: "Profile",
+                    subtitle: "Manage your account",
+                    icon: Icons.person_outline,
                   ),
                 ],
               ),
             ),
 
-            // Bloc météo dynamique
-            weatherBloc(),
-
-            // Titre Plants
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 10, 20, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "My Plants",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-              ),
-            ),
-
-            // Liste des plants (grille)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.builder(
-                  itemCount: plants.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemBuilder: (context, index) {
-                    final plant = plants[index];
-                    return _PlantCard(
-                      name: plant["name"]!,
-                      description: plant["description"]!,
-                      imageUrl: plant["image"]!,
-                    );
-                  },
-                ),
-              ),
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
 
-      // Bottom navigation
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const [
-            Icon(Icons.notifications_none, size: 32, color: Colors.green),
-            Icon(Icons.local_florist, size: 32, color: Colors.orange),
-            Icon(Icons.home, size: 32, color: Colors.green),
-            Icon(Icons.person_outline, size: 32, color: Colors.green),
-          ],
-        ),
+      // BOTTOM NAV
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.cloud), label: "Weather"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.camera_alt), label: "Diseases"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person), label: "Profile"),
+        ],
       ),
     );
   }
 }
 
-class _PlantCard extends StatelessWidget {
-  final String name;
-  final String description;
-  final String imageUrl;
+// ================= FEATURE CARD =================
+class FeatureCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
 
-  const _PlantCard({
-    required this.name,
-    required this.description,
-    required this.imageUrl,
+  const FeatureCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
-            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Image.network(
-              imageUrl,
-              height: 100,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          Icon(icon, size: 48, color: Colors.green),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                ),
-              ],
-            ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
