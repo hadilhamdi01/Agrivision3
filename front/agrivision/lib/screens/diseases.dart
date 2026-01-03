@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart';
+import '../services/location_service.dart';
+import 'loginPage.dart';
+import 'home_screen.dart'; // Assure-toi d'importer HomeScreen
 
 class DiseasesPage extends StatefulWidget {
   const DiseasesPage({super.key});
@@ -24,8 +28,9 @@ class _DiseasesPageState extends State<DiseasesPage> {
   static const Color primaryGreen = Color(0xFF5DB075);
   static const Color backgroundColor = Color(0xFFFDF7F9);
 
-  static const String apiUrl =
-      "http://localhost:8083/images/upload"; // Gateway ou localhost pour émulateur
+  static const String apiUrl = "http://localhost:8083/images/upload";
+
+  int _currentIndex = 3; // DiseasesPage = index 3
 
   @override
   void initState() {
@@ -39,12 +44,11 @@ class _DiseasesPageState extends State<DiseasesPage> {
     if (storedToken != null) {
       setState(() => token = storedToken);
     } else {
-      // Rediriger vers login si pas de token
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const LoginPage()));
     }
   }
 
-  // ================= IMAGE PICKERS =================
   Future<void> _pickFromCamera() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image != null) {
@@ -65,7 +69,6 @@ class _DiseasesPageState extends State<DiseasesPage> {
     }
   }
 
-  // ================= IA CALL =================
   Future<void> _analyzeImage() async {
     if (_selectedImage == null || token == null) return;
 
@@ -73,15 +76,10 @@ class _DiseasesPageState extends State<DiseasesPage> {
 
     try {
       final request = http.MultipartRequest("POST", Uri.parse(apiUrl));
-
       request.files.add(
         await http.MultipartFile.fromPath("file", _selectedImage!.path),
       );
-
-      // Ajouter token JWT dans l'en-tête
-      request.headers.addAll({
-        "Authorization": "Bearer $token",
-      });
+      request.headers.addAll({"Authorization": "Bearer $token"});
 
       final response = await request.send();
       final body = await response.stream.bytesToString();
@@ -109,20 +107,24 @@ class _DiseasesPageState extends State<DiseasesPage> {
     }
   }
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
+
+      drawer: appDrawer(context),
+
       appBar: AppBar(
         backgroundColor: primaryGreen,
         elevation: 0,
-        title: const Text(
-          'Agri AI',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+      title: const Text("Agrivision",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
-        centerTitle: true,
-        leading: const Icon(Icons.menu),
         actions: const [
           Icon(Icons.search),
           SizedBox(width: 12),
@@ -130,11 +132,13 @@ class _DiseasesPageState extends State<DiseasesPage> {
           SizedBox(width: 12),
         ],
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // UPLOAD & ANALYSIS
             const Text(
               'Plant Problems?',
               style: TextStyle(
@@ -150,10 +154,40 @@ class _DiseasesPageState extends State<DiseasesPage> {
           ],
         ),
       ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: primaryGreen,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+
+          switch (index) {
+            case 0: // Home
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+              break;
+            case 3: // Diseases
+              break; // already on this page
+            default:
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: "Diseases"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
     );
   }
 
-  // ================= UPLOAD CARD =================
   Widget _uploadCard() {
     return Container(
       width: double.infinity,
@@ -255,7 +289,8 @@ class _DiseasesPageState extends State<DiseasesPage> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         "Analyze Image",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style:
+                            TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
               ),
             ),
@@ -265,7 +300,6 @@ class _DiseasesPageState extends State<DiseasesPage> {
     );
   }
 
-  // ================= SPOTLIGHT BLOCK =================
   Widget _spotlightBlock() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,7 +308,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
             Text(
-              'In the Spotlight',
+              'In the Prediction',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
@@ -287,7 +321,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
         if (aiResult == null)
           const Center(
             child: Text(
-              'No news highlights available right now.',
+              'No news predictions available right now.',
               style: TextStyle(color: Colors.grey),
             ),
           )
@@ -366,4 +400,72 @@ class _DiseasesPageState extends State<DiseasesPage> {
       ],
     );
   }
+}
+
+// ================= DRAWER =================
+Widget appDrawer(BuildContext context) {
+  return Drawer(
+    child: Column(
+      children: [
+        DrawerHeader(
+          decoration: const BoxDecoration(color: Color(0xFF76AD81)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 34, color: Colors.green),
+              ),
+              SizedBox(height: 12),
+              Text("AgriVision",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold)),
+              Text("Smart Farming Assistant",
+                  style: TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.home),
+          title: const Text("Home"),
+          onTap: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.chat),
+          title: const Text("Chat"),
+        ),
+        ListTile(
+          leading: const Icon(Icons.camera_alt),
+          title: const Text("Diseases"),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.person),
+          title: const Text("Profile"),
+        ),
+        const Spacer(),
+        ListTile(
+          leading: const Icon(Icons.logout, color: Colors.red),
+          title: const Text("Logout", style: TextStyle(color: Colors.red)),
+          onTap: () async {
+            await AuthService.logout();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    ),
+  );
 }

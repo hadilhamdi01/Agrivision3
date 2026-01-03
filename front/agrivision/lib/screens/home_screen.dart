@@ -4,7 +4,7 @@ import '../services/auth_service.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
 import 'loginPage.dart';
-import 'diseases.dart'; // <-- import pour la page Diseases
+import 'diseases.dart'; // import pour la page Diseases
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? weather;
   bool loading = true;
   String? token;
+
+  int _currentIndex = 0; // Home = index 0
 
   @override
   void initState() {
@@ -61,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String iconUrl(String icon) =>
       "https://openweathermap.org/img/wn/$icon@2x.png";
 
-  // ================= WEATHER CARD =================
   Widget weatherCard() {
     if (loading) {
       return const Padding(
@@ -126,30 +127,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
-
-      // 🔥 DRAWER (SIDEBAR)
       drawer: appDrawer(context),
-
-      // APP BAR
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 118, 173, 129),
+             backgroundColor: const Color(0xFF5DB075),
+
         elevation: 0,
         title: const Text("Agrivision",
             style: TextStyle(fontWeight: FontWeight.bold)),
-
-        // ☰ OPEN DRAWER
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-
         actions: const [
           Icon(Icons.search),
           SizedBox(width: 16),
@@ -157,8 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(width: 16),
         ],
       ),
-
-      // BODY
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,19 +215,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // BOTTOM NAV
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          switch (index) {
+            case 0: // Home
+              // On est déjà ici
+              break;
+            case 3: // Diseases
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DiseasesPage()),
+              );
+              break;
+            default:
+              break;
+          }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.cloud), label: "Weather"),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.camera_alt), label: "Diseases"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: "Diseases"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
@@ -268,7 +276,6 @@ Widget appDrawer(BuildContext context) {
             ],
           ),
         ),
-
         ListTile(
           leading: const Icon(Icons.home),
           title: const Text("Home"),
@@ -285,7 +292,7 @@ Widget appDrawer(BuildContext context) {
           leading: const Icon(Icons.camera_alt),
           title: const Text("Diseases"),
           onTap: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const DiseasesPage()),
             );
@@ -295,14 +302,10 @@ Widget appDrawer(BuildContext context) {
           leading: const Icon(Icons.person),
           title: const Text("Profile"),
         ),
-
         const Spacer(),
-
-        // 🔴 LOGOUT
         ListTile(
           leading: const Icon(Icons.logout, color: Colors.red),
-          title:
-              const Text("Logout", style: TextStyle(color: Colors.red)),
+          title: const Text("Logout", style: TextStyle(color: Colors.red)),
           onTap: () async {
             await AuthService.logout();
             Navigator.pushAndRemoveUntil(
@@ -336,7 +339,7 @@ class FeatureCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (title == "Disease Scanner") {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const DiseasesPage()),
           );
