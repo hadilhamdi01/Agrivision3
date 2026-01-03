@@ -1,0 +1,5 @@
+PS C:\Users\ADMIN> cd 'C:\Users\ADMIN\OneDrive - South Mediterranean University\Desktop\PFA\back'
+
+
+mvn spring-boot:run
+uvicorn app.main:app --reload --port 8005

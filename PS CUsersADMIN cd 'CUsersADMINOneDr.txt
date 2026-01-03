@@ -4,3 +4,11 @@ mvn spring-boot:run
 kc.bat start-dev --http-port=8085 pour lancer Keycloak
 uvicorn app.main:app --reload --port 8005
 
+
+
+  datasource:
+    # On pointe vers l'adresse de MySQL dans XAMPP
+    url: jdbc:mysql://localhost:3306/image_historique_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: root
+    password:     # Par défaut dans XAMPP, le mot de passe est vide
+    driver-class-name: com.mysql.cj.jdbc.Driver
