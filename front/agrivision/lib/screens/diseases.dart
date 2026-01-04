@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:agrivision/screens/history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../services/auth_service.dart';
-import '../services/location_service.dart';
 import 'loginPage.dart';
-import 'home_screen.dart'; // Assure-toi d'importer HomeScreen
+import 'home_screen.dart';
 
 class DiseasesPage extends StatefulWidget {
   const DiseasesPage({super.key});
@@ -29,8 +30,9 @@ class _DiseasesPageState extends State<DiseasesPage> {
   static const Color backgroundColor = Color(0xFFFDF7F9);
 
   static const String apiUrl = "http://localhost:8083/images/upload";
+  static const String historyUrl = "http://localhost:8083/history";
 
-  int _currentIndex = 3; // DiseasesPage = index 3
+  int _currentIndex = 2; // Diseases
 
   @override
   void initState() {
@@ -41,17 +43,22 @@ class _DiseasesPageState extends State<DiseasesPage> {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     final storedToken = prefs.getString('token');
-    if (storedToken != null) {
-      setState(() => token = storedToken);
-    } else {
+
+    if (!mounted) return;
+
+    if (storedToken == null) {
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => const LoginPage()));
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    } else {
+      setState(() => token = storedToken);
     }
   }
 
   Future<void> _pickFromCamera() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() {
         _selectedImage = File(image.path);
         aiResult = null;
@@ -61,7 +68,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
 
   Future<void> _pickFromGallery() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() {
         _selectedImage = File(image.path);
         aiResult = null;
@@ -75,27 +82,34 @@ class _DiseasesPageState extends State<DiseasesPage> {
     setState(() => isLoading = true);
 
     try {
-      final request = http.MultipartRequest("POST", Uri.parse(apiUrl));
+      final request =
+          http.MultipartRequest("POST", Uri.parse(apiUrl));
       request.files.add(
         await http.MultipartFile.fromPath("file", _selectedImage!.path),
       );
-      request.headers.addAll({"Authorization": "Bearer $token"});
+      request.headers["Authorization"] = "Bearer $token";
 
       final response = await request.send();
       final body = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
         final decoded = json.decode(body);
-        setState(() {
-          aiResult = decoded["prediction"];
-        });
-      } else if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erreur 401 : Non autorisé")),
+        setState(() => aiResult = decoded["prediction"]);
+
+        await http.post(
+          Uri.parse(historyUrl),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({
+            "result": decoded["prediction"]["details"]["name"],
+            "confidence": decoded["prediction"]["confidence"],
+          }),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur ${response.statusCode}: $body")),
+          SnackBar(content: Text("Erreur ${response.statusCode}")),
         );
       }
     } catch (e) {
@@ -103,7 +117,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
         SnackBar(content: Text("Erreur IA : $e")),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -111,14 +125,14 @@ class _DiseasesPageState extends State<DiseasesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-
       drawer: appDrawer(context),
-
       appBar: AppBar(
         backgroundColor: primaryGreen,
         elevation: 0,
-      title: const Text("Agrivision",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Agrivision",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -132,13 +146,11 @@ class _DiseasesPageState extends State<DiseasesPage> {
           SizedBox(width: 12),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // UPLOAD & ANALYSIS
             const Text(
               'Plant Problems?',
               style: TextStyle(
@@ -150,43 +162,49 @@ class _DiseasesPageState extends State<DiseasesPage> {
             const SizedBox(height: 15),
             _uploadCard(),
             const SizedBox(height: 40),
-            _spotlightBlock(),
+            _spotlightBlock(), // UI IDENTIQUE
           ],
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: primaryGreen,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index == _currentIndex) return;
 
           switch (index) {
-            case 0: // Home
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const HomeScreen()),
               );
               break;
-            case 3: // Diseases
-              break; // already on this page
-            default:
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryPage()),
+              );
+              break;
+            case 2:
+              break;
+            case 3:
               break;
           }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: "Diseases"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.camera_alt), label: "Diseases"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
   }
+
+  // ================= UI UPLOAD CARD (INCHANGÉ) =================
 
   Widget _uploadCard() {
     return Container(
@@ -215,18 +233,16 @@ class _DiseasesPageState extends State<DiseasesPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _iconColumn(
-                icon: Icons.eco,
-                label: 'Identify\nProblem',
-                color: primaryGreen,
-              ),
+                  icon: Icons.eco,
+                  label: 'Identify\nProblem',
+                  color: primaryGreen),
               const SizedBox(width: 30),
               const Icon(Icons.arrow_forward),
               const SizedBox(width: 30),
               _iconColumn(
-                icon: Icons.search,
-                label: 'Get\nSolution',
-                color: Colors.blue,
-              ),
+                  icon: Icons.search,
+                  label: 'Get\nSolution',
+                  color: Colors.blue),
             ],
           ),
           const SizedBox(height: 30),
@@ -243,8 +259,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryGreen,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                    borderRadius: BorderRadius.circular(30)),
               ),
             ),
           ),
@@ -282,15 +297,14 @@ class _DiseasesPageState extends State<DiseasesPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                      borderRadius: BorderRadius.circular(30)),
                 ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         "Analyze Image",
-                        style:
-                            TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
               ),
             ),
@@ -299,6 +313,8 @@ class _DiseasesPageState extends State<DiseasesPage> {
       ),
     );
   }
+
+  // ================= UI PREDICTION (IDENTIQUE À TON CODE) =================
 
   Widget _spotlightBlock() {
     return Column(
@@ -403,6 +419,7 @@ class _DiseasesPageState extends State<DiseasesPage> {
 }
 
 // ================= DRAWER =================
+
 Widget appDrawer(BuildContext context) {
   return Drawer(
     child: Column(
@@ -439,22 +456,20 @@ Widget appDrawer(BuildContext context) {
           },
         ),
         ListTile(
-          leading: const Icon(Icons.chat),
-          title: const Text("Chat"),
-        ),
-        ListTile(
-          leading: const Icon(Icons.camera_alt),
-          title: const Text("Diseases"),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.person),
-          title: const Text("Profile"),
+          leading: const Icon(Icons.history),
+          title: const Text("History"),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryPage()),
+            );
+          },
         ),
         const Spacer(),
         ListTile(
           leading: const Icon(Icons.logout, color: Colors.red),
-          title: const Text("Logout", style: TextStyle(color: Colors.red)),
+          title: const Text("Logout",
+              style: TextStyle(color: Colors.red)),
           onTap: () async {
             await AuthService.logout();
             Navigator.pushAndRemoveUntil(
@@ -464,7 +479,6 @@ Widget appDrawer(BuildContext context) {
             );
           },
         ),
-        const SizedBox(height: 16),
       ],
     ),
   );

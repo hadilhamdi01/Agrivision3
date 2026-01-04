@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 @RequestMapping("/history")
 @CrossOrigin("*")
@@ -26,6 +25,7 @@ public class ImageHistoryController {
 
     @PostMapping
     public ResponseEntity<ImageHistory> save(@RequestBody ImageHistory history) {
+        System.out.println("📥 HISTORIQUE REÇU : " + history);
         return ResponseEntity.ok(service.save(history));
     }
 

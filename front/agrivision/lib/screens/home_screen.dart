@@ -4,7 +4,13 @@ import '../services/auth_service.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
 import 'loginPage.dart';
-import 'diseases.dart'; // import pour la page Diseases
+import 'diseases.dart';
+import 'history_page.dart';
+// Si tu as une page Profile, importe-la aussi
+// import 'profile_page.dart';
+
+// Couleur principale
+const Color primaryGreen = Color(0xFF5DB075);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -72,7 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (weather == null) {
-      return const Text("Weather unavailable");
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Text("Weather unavailable"),
+      );
     }
 
     return Container(
@@ -133,8 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF4F7F6),
       drawer: appDrawer(context),
       appBar: AppBar(
-             backgroundColor: const Color(0xFF5DB075),
-
+        backgroundColor: primaryGreen,
         elevation: 0,
         title: const Text("Agrivision",
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -188,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 16,
                 children: const [
                   FeatureCard(
-                    title: "Chat",
+                    title: "History",
                     subtitle: "Get instant farming advice",
                     icon: Icons.chat_bubble_outline,
                   ),
@@ -214,111 +222,134 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.green,
+        selectedItemColor: primaryGreen,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index == _currentIndex) return;
+
           switch (index) {
-            case 0: // Home
-              // On est déjà ici
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
               break;
-            case 3: // Diseases
+            case 1:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryPage()),
+              );
+              break;
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const DiseasesPage()),
               );
               break;
-            default:
+            case 3:
+              // Profile page si existante
               break;
           }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.cloud), label: "Weather"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: "Diseases"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.camera_alt), label: "Diseases"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
   }
-}
 
-// ================= DRAWER =================
-Widget appDrawer(BuildContext context) {
-  return Drawer(
-    child: Column(
-      children: [
-        DrawerHeader(
-          decoration: const BoxDecoration(color: Color(0xFF76AD81)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 34, color: Colors.green),
-              ),
-              SizedBox(height: 12),
-              Text("AgriVision",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold)),
-              Text("Smart Farming Assistant",
-                  style: TextStyle(color: Colors.white70)),
-            ],
+  // ================= DRAWER =================
+  Widget appDrawer(BuildContext context) {
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Color(0xFF76AD81)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 34, color: Colors.green),
+                ),
+                SizedBox(height: 12),
+                Text("AgriVision",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
+                Text("Smart Farming Assistant",
+                    style: TextStyle(color: Colors.white70)),
+              ],
+            ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.home),
-          title: const Text("Home"),
-        ),
-        ListTile(
-          leading: const Icon(Icons.cloud),
-          title: const Text("Weather"),
-        ),
-        ListTile(
-          leading: const Icon(Icons.chat),
-          title: const Text("Chat"),
-        ),
-        ListTile(
-          leading: const Icon(Icons.camera_alt),
-          title: const Text("Diseases"),
-          onTap: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const DiseasesPage()),
-            );
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.person),
-          title: const Text("Profile"),
-        ),
-        const Spacer(),
-        ListTile(
-          leading: const Icon(Icons.logout, color: Colors.red),
-          title: const Text("Logout", style: TextStyle(color: Colors.red)),
-          onTap: () async {
-            await AuthService.logout();
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-              (route) => false,
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-      ],
-    ),
-  );
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text("Home"),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cloud),
+            title: const Text("Weather"),
+          ),
+          ListTile(
+            leading: const Icon(Icons.chat),
+            title: const Text("History"),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text("Diseases"),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DiseasesPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text("Profile"),
+            onTap: () {
+              // Naviguer vers page Profile si existante
+            },
+          ),
+          const Spacer(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text("Logout", style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              await AuthService.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 }
 
 // ================= FEATURE CARD =================
@@ -338,11 +369,22 @@ class FeatureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        if (title == "Disease Scanner") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DiseasesPage()),
-          );
+        switch (title) {
+          case "Disease Scanner":
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DiseasesPage()),
+            );
+            break;
+          case "History":
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryPage()),
+            );
+            break;
+          case "Profile":
+            // Naviguer vers ProfilePage si existante
+            break;
         }
       },
       child: Container(
